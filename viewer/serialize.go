@@ -3,11 +3,7 @@ package viewer
 import (
 	"errors"
 	"fmt"
-	"log"
-	"math/rand"
-	"os"
-	"path"
-	"strings"
+
 	"termdbms/database"
 )
 
@@ -17,8 +13,8 @@ var (
 
 func Serialize(m *TuiModel) (string, error) {
 	switch m.Table().Database.(type) {
-	case *database.SQLite:
-		return SerializeSQLiteDB(m.Table().Database.(*database.SQLite), m), nil
+	//case *database.Hazelcast:
+	//	return SerializeSQLiteDB(m.Table().Database.(*database.SQLite), m), nil
 	default:
 		return "", errors.New(serializationErrorString)
 	}
@@ -27,9 +23,9 @@ func Serialize(m *TuiModel) (string, error) {
 func SerializeOverwrite(m *TuiModel) error {
 	t := m.Table()
 	switch t.Database.(type) {
-	case *database.SQLite:
-		SerializeOverwriteSQLiteDB(t.Database.(*database.SQLite), m)
-		return nil
+	//case *database.SQLite:
+	//	SerializeOverwriteSQLiteDB(t.Database.(*database.SQLite), m)
+	//	return nil
 	default:
 		return errors.New(serializationErrorString)
 	}
@@ -37,6 +33,7 @@ func SerializeOverwrite(m *TuiModel) error {
 
 // SQLITE
 
+/*
 func SerializeSQLiteDB(db *database.SQLite, m *TuiModel) string {
 	db.CloseDatabaseReference()
 	source, err := os.ReadFile(db.GetFileName())
@@ -68,3 +65,4 @@ func SerializeOverwriteSQLiteDB(db *database.SQLite, m *TuiModel) {
 	}
 	db.SetDatabaseReference(filename)
 }
+*/

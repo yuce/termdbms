@@ -4,15 +4,13 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"os"
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
-	"io/fs"
-	"io/ioutil"
-	_ "modernc.org/sqlite"
-	"os"
-	"path/filepath"
-	"strings"
+
 	"termdbms/database"
 	. "termdbms/tuiutil"
 	. "termdbms/viewer"
@@ -25,8 +23,9 @@ const (
 )
 
 const (
-	DatabaseSQLite DatabaseType = "sqlite"
-	DatabaseMySQL  DatabaseType = "mysql"
+	//DatabaseSQLite DatabaseType = "sqlite"
+	//DatabaseMySQL  DatabaseType = "mysql"
+	DatabaseHazelcast DatabaseType = "hazelcast"
 )
 
 var (
@@ -56,7 +55,7 @@ func main() {
 	}
 
 	// flags declaration using flag package
-	flag.StringVar(&databaseType, "d", string(DatabaseSQLite), "Specifies the SQL driver to use. Defaults to SQLite.")
+	flag.StringVar(&databaseType, "d", string(DatabaseHazelcast), "Specifies the SQL driver to use. Defaults to Hazelcast.")
 	flag.StringVar(&path, "p", "", "Path to the database file.")
 	flag.StringVar(&theme, "t", "default", "sets the color theme of the app.")
 	flag.BoolVar(&help, "h", false, "Prints the help message.")
@@ -88,47 +87,49 @@ func main() {
 		theme = "default"
 	}
 
-	// gets a sqlite instance for the database file
-	if exists, _ := FileExists(path); exists {
-		fmt.Printf("ERROR: Database file could not be found at %s\n", path)
-		os.Exit(1)
-	}
-
-	if valid, _ := Exists(HiddenTmpDirectoryName); valid {
-		filepath.Walk(HiddenTmpDirectoryName, func(path string, info fs.FileInfo, err error) error {
-			if strings.HasPrefix(path, fmt.Sprintf("%s/.", HiddenTmpDirectoryName)) && !info.IsDir() {
-				os.Remove(path) // remove all temp databaess
-			}
-			return nil
-		})
-	} else {
-		os.Mkdir(HiddenTmpDirectoryName, 0777)
-	}
-
-	database.IsCSV = strings.HasSuffix(path, ".csv")
-	dst := path
-	if database.IsCSV { // convert the csv to sql, then run the sql through a database
-		sqlFile := strings.TrimSuffix(path, ".csv")
-		sqlFile = filepath.Base(sqlFile)
-		path = Convert(path, sqlFile, true)
-		csvDBFile := HiddenTmpDirectoryName + "/" + sqlFile + ".db"
-		os.Create(csvDBFile)
-		dst, _ = filepath.Abs(csvDBFile)
-		d, _ := sql.Open(database.DriverString, dst)
-		f, _ := os.Open(path)
-		b, _ := ioutil.ReadAll(f)
-		query := string(b)
-		_, err := d.Exec(query)
-		if err != nil {
-			fmt.Printf("%v", err)
+	/*
+		// gets a sqlite instance for the database file
+		if exists, _ := FileExists(path); exists {
+			fmt.Printf("ERROR: Database file could not be found at %s\n", path)
 			os.Exit(1)
 		}
-		d.Close()
-		os.Remove(path) // this deletes the converted .sql file
-	}
 
-	dst, _, _ = CopyFile(dst)
+		if valid, _ := Exists(HiddenTmpDirectoryName); valid {
+			filepath.Walk(HiddenTmpDirectoryName, func(path string, info fs.FileInfo, err error) error {
+				if strings.HasPrefix(path, fmt.Sprintf("%s/.", HiddenTmpDirectoryName)) && !info.IsDir() {
+					os.Remove(path) // remove all temp databaess
+				}
+				return nil
+			})
+		} else {
+			os.Mkdir(HiddenTmpDirectoryName, 0777)
+		}
 
+		database.IsCSV = strings.HasSuffix(path, ".csv")
+		dst := path
+		if database.IsCSV { // convert the csv to sql, then run the sql through a database
+			sqlFile := strings.TrimSuffix(path, ".csv")
+			sqlFile = filepath.Base(sqlFile)
+			path = Convert(path, sqlFile, true)
+			csvDBFile := HiddenTmpDirectoryName + "/" + sqlFile + ".db"
+			os.Create(csvDBFile)
+			dst, _ = filepath.Abs(csvDBFile)
+			d, _ := sql.Open(database.DriverString, dst)
+			f, _ := os.Open(path)
+			b, _ := ioutil.ReadAll(f)
+			query := string(b)
+			_, err := d.Exec(query)
+			if err != nil {
+				fmt.Printf("%v", err)
+				os.Exit(1)
+			}
+			d.Close()
+			os.Remove(path) // this deletes the converted .sql file
+		}
+
+		dst, _, _ = CopyFile(dst)
+	*/
+	dst := path
 	db := database.GetDatabaseForFile(dst)
 	defer func() {
 		if db == nil {
@@ -180,8 +181,7 @@ func handleFlags() {
 		os.Exit(1)
 	}
 
-	if databaseType != string(DatabaseMySQL) &&
-		databaseType != string(DatabaseSQLite) {
+	if databaseType != string(DatabaseHazelcast) {
 		fmt.Printf("Invalid database driver specified: %s", databaseType)
 		os.Exit(1)
 	}

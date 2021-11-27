@@ -1,12 +1,22 @@
 package database
 
-/*
-type SQLite struct {
-	FileName string
-	Database *sql.DB
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"log"
+	"strings"
+
+	"github.com/hazelcast/hazelcast-go-client"
+	_ "github.com/hazelcast/hazelcast-go-client/sql/driver"
+)
+
+type Hazelcast struct {
+	ConnString string
+	Database   *sql.DB
 }
 
-func (db *SQLite) Update(q *Update) {
+func (db *Hazelcast) Update(q *Update) {
 	protoQuery, columnOrder := db.GenerateQuery(q)
 	values := make([]interface{}, len(columnOrder))
 	updateValues := q.GetValues()
@@ -40,49 +50,48 @@ func (db *SQLite) Update(q *Update) {
 	}
 }
 
-func (db *SQLite) GetFileName() string {
-	return db.FileName
+func (db *Hazelcast) GetFileName() string {
+	return db.ConnString
 }
 
-func (db *SQLite) GetDatabaseReference() *sql.DB {
+func (db *Hazelcast) GetDatabaseReference() *sql.DB {
 	return db.Database
 }
 
-func (db *SQLite) CloseDatabaseReference() {
+func (db *Hazelcast) CloseDatabaseReference() {
 	db.GetDatabaseReference().Close()
 	db.Database = nil
 }
 
-func (db *SQLite) SetDatabaseReference(dbPath string) {
-	database := GetDatabaseForFile(dbPath)
-	db.FileName = dbPath
+func (db *Hazelcast) SetDatabaseReference(connString string) {
+	database := GetDatabaseForFile(connString)
+	db.ConnString = connString
 	db.Database = database
 }
 
-func (db SQLite) GetPlaceholderForDatabaseType() string {
+func (db Hazelcast) GetPlaceholderForDatabaseType() string {
 	return "?"
 }
 
-func (db SQLite) GetTableNames() ([]string, error) {
-	var names []string
-	q := "SELECT name FROM sqlite_master WHERE type='table'"
-	rows, err := db.Database.Query(q)
+func (db Hazelcast) GetTableNames() ([]string, error) {
+	client, err := clientFromConnectionString(db.ConnString)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	// for each schema
-	for rows.Next() {
-		var schemaName string
-		if err := rows.Scan(&schemaName); err != nil {
-			return nil, err
+	ts, err := client.GetDistributedObjectsInfo(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	var names []string
+	for _, t := range ts {
+		if t.ServiceName == hazelcast.ServiceNameMap {
+			names = append(names, t.Name)
 		}
-		names = append(names, schemaName)
 	}
 	return names, nil
 }
 
-func (db *SQLite) GenerateQuery(u *Update) (string, []string) {
+func (db *Hazelcast) GenerateQuery(u *Update) (string, []string) {
 	var (
 		query         string
 		querySkeleton string
@@ -112,4 +121,12 @@ func (db *SQLite) GenerateQuery(u *Update) (string, []string) {
 	return query, valueOrder
 }
 
-*/
+func clientFromConnectionString(connStr string) (*hazelcast.Client, error) {
+	config := hazelcast.Config{}
+	addrsRest := strings.SplitN(connStr, ";", 2)
+	if addrsRest[0] != "" {
+		addrs := strings.Split(addrsRest[0], ",")
+		config.Cluster.Network.SetAddresses(addrs...)
+	}
+	return hazelcast.StartNewClientWithConfig(context.Background(), config)
+}

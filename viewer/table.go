@@ -2,12 +2,14 @@ package viewer
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"strings"
+
 	"termdbms/database"
 	"termdbms/tuiutil"
-	"time"
 )
 
 type TableAssembly func(m *TuiModel, s *string, c *chan bool)
@@ -103,7 +105,7 @@ func init() {
 		}
 		undoRedoInfo := fmt.Sprintf(" undo(%d) / redo(%d) ", len(m.UndoStack), len(m.RedoStack))
 		switch m.Table().Database.(type) {
-		case *database.SQLite:
+		case *database.Hazelcast:
 			break
 		default:
 			undoRedoInfo = ""

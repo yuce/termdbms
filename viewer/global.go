@@ -2,9 +2,11 @@ package viewer
 
 import (
 	"fmt"
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"strings"
+
 	"termdbms/database"
 	"termdbms/tuiutil"
 )
@@ -44,9 +46,9 @@ func init() {
 			deepCopy := m.CopyMap()
 			// THE GLOBALIST TAKEOVER
 			deepState := TableState{
-				Database: &database.SQLite{
-					FileName: m.Table().Database.GetFileName(),
-					Database: nil,
+				Database: &database.Hazelcast{
+					ConnString: m.Table().Database.GetFileName(),
+					Database:   nil,
 				}, // placeholder for now while testing database copy
 				Data: deepCopy,
 			}
@@ -70,9 +72,9 @@ func init() {
 			t := m.Table()
 			// THE GLOBALIST TAKEOVER
 			deepState := TableState{
-				Database: &database.SQLite{
-					FileName: t.Database.GetFileName(),
-					Database: nil,
+				Database: &database.Hazelcast{
+					ConnString: t.Database.GetFileName(),
+					Database:   nil,
 				}, // placeholder for now while testing database copy
 				Data: deepCopy,
 			}

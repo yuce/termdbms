@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	tea "github.com/charmbracelet/bubbletea"
 	"os"
-	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
+
 	"termdbms/database"
 	"termdbms/list"
 	"termdbms/tuiutil"
@@ -56,9 +57,9 @@ func (m *TuiModel) CopyMap() (to map[string]interface{}) {
 func GetNewModel(baseFileName string, db *sql.DB) TuiModel {
 	m := TuiModel{
 		DefaultTable: TableState{
-			Database: &database.SQLite{
-				FileName: baseFileName,
-				Database: db,
+			Database: &database.Hazelcast{
+				ConnString: baseFileName,
+				Database:   db,
 			},
 			Data: make(map[string]interface{}),
 		},
@@ -120,38 +121,27 @@ func GetNewModel(baseFileName string, db *sql.DB) TuiModel {
 // SetModel creates a model to be used by bubbletea using some golang wizardry
 func (m *TuiModel) SetModel(c *sql.Rows, db *sql.DB) error {
 	var err error
-
 	indexMap := 0
-
-	// gets all the schema names of the database
-	tableNamesQuery := m.Table().Database.GetTableNamesQuery()
-	rows, err := db.Query(tableNamesQuery)
+	tableNames, err := m.Table().Database.GetTableNames()
 	if err != nil {
 		return err
 	}
-
-	defer rows.Close()
-
+	fmt.Println("table names:", tableNames)
 	// for each schema
-	for rows.Next() {
-		var schemaName string
-		rows.Scan(&schemaName)
-
-		// couldn't get prepared statements working and gave up because it was very simple
-		var statement strings.Builder
-		statement.WriteString("select * from ")
-		statement.WriteString(schemaName)
-		getAll := statement.String()
-
+	for _, schemaName := range tableNames {
+		getAll := fmt.Sprintf(`select * from "%s"`, schemaName)
 		if c != nil {
 			c.Close()
 			c = nil
 		}
-		c, err = db.Query(getAll)
+		err := db.Ping()
+		if err != nil {
+			panic("Cannot ping")
+		}
+		c, err := db.Query(getAll)
 		if err != nil {
 			panic(err)
 		}
-
 		m.PopulateDataForResult(c, &indexMap, schemaName)
 	}
 

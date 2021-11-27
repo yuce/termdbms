@@ -28,14 +28,15 @@ type Database interface {
 	GenerateQuery(u *Update) (string, []string)
 	GetPlaceholderForDatabaseType() string
 	GetFileName() string
-	GetTableNamesQuery() string
+	//GetTableNamesQuery() string
+	GetTableNames() ([]string, error)
 	GetDatabaseReference() *sql.DB
 	CloseDatabaseReference()
 	SetDatabaseReference(dbPath string)
 }
 
 type Update struct {
-	v    map[string]interface{} // these are anchors to ensure the right row/col gets updated
+	v         map[string]interface{} // these are anchors to ensure the right row/col gets updated
 	Column    string                 // this is the header
 	Update    interface{}            // this is the new cell value
 	TableName string
