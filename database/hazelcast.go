@@ -122,11 +122,13 @@ func (db *Hazelcast) GenerateQuery(u *Update) (string, []string) {
 }
 
 func clientFromConnectionString(connStr string) (*hazelcast.Client, error) {
-	config := hazelcast.Config{}
-	addrsRest := strings.SplitN(connStr, ";", 2)
-	if addrsRest[0] != "" {
-		addrs := strings.Split(addrsRest[0], ",")
-		config.Cluster.Network.SetAddresses(addrs...)
-	}
-	return hazelcast.StartNewClientWithConfig(context.Background(), config)
+	/*
+		config := hazelcast.Config{}
+		addrsRest := strings.SplitN(connStr, ";", 2)
+		if addrsRest[0] != "" {
+			addrs := strings.Split(addrsRest[0], ",")
+			config.Cluster.Network.SetAddresses(addrs...)
+		}
+	*/
+	return hazelcast.StartNewClient(context.Background())
 }

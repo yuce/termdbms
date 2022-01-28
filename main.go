@@ -175,11 +175,14 @@ func handleFlags() {
 		lipgloss.SetColorProfile(termenv.Ascii)
 	}
 
-	if path != "" && !IsUrl(path) {
-		fmt.Printf("ERROR: Invalid path %s\n", path)
-		flag.Usage()
-		os.Exit(1)
-	}
+	/*
+		if path != "" && !IsUrl(path) {
+			fmt.Printf("ERROR: Invalid path %s\n", path)
+			flag.Usage()
+			os.Exit(1)
+		}
+
+	*/
 
 	if databaseType != string(DatabaseHazelcast) {
 		fmt.Printf("Invalid database driver specified: %s", databaseType)
