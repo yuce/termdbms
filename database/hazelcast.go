@@ -8,7 +8,8 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	_ "github.com/hazelcast/hazelcast-go-client/sql/driver"
+	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/sql/driver"
 )
 
 type Hazelcast struct {
@@ -34,17 +35,13 @@ func (db *Hazelcast) Update(q *Update) {
 
 		values[i] = u
 	}
-	tx, err := db.GetDatabaseReference().Begin()
-	if err != nil {
-		log.Fatal(err)
-	}
-	stmt, err := tx.Prepare(protoQuery)
+
+	stmt, err := db.Database.Prepare(protoQuery)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close()
-	stmt.Exec(values...)
-	err = tx.Commit()
+	_, err = stmt.Exec(values...)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -130,5 +127,8 @@ func clientFromConnectionString(connStr string) (*hazelcast.Client, error) {
 			config.Cluster.Network.SetAddresses(addrs...)
 		}
 	*/
-	return hazelcast.StartNewClient(context.Background())
+	var conf hazelcast.Config
+	conf.Logger.Level = logger.OffLevel
+	_ = driver.SetLoggerConfig(&conf.Logger)
+	return hazelcast.StartNewClientWithConfig(context.Background(), conf)
 }
