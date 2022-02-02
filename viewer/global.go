@@ -200,7 +200,11 @@ func init() {
 		return nil
 	}
 	GlobalCommands["s"] = func(m *TuiModel) tea.Cmd {
-		max := len(m.GetSchemaData()[m.GetHeaders()[m.GetColumn()]])
+		data := m.GetSchemaData()
+		if len(data) == 0 {
+			return nil
+		}
+		max := len(data[m.GetHeaders()[m.GetColumn()]])
 
 		if m.MouseData.Y-HeaderHeight+m.Viewport.YOffset < max-1 {
 			m.MouseData.Y++

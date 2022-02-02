@@ -126,7 +126,6 @@ func (m *TuiModel) SetModel(c *sql.Rows, db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("table names:", tableNames)
 	// for each schema
 	for _, schemaName := range tableNames {
 		getAll := fmt.Sprintf(`select * from "%s"`, schemaName)
